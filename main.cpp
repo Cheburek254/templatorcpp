@@ -1,196 +1,155 @@
-
 #include <iostream>
 #include <fstream>
 
+const int kMaxVariables = 1024;
+const int kMaxKeyLength = 100;
+const int kMaxValueLength = 100;
+const int kMaxLineLength = 4096;
 
-
-
-
-const int maxAmountOfVariables = 1024;
-const int maxKeyLength = 100;
-const int maxValueLength = 100;
-const int maxLineLength = 4096;
-
-
-
-
-struct dataElement {
-    char key[maxKeyLength+1];
-    char value[maxValueLength+1];
+struct DataElement {
+    char key[kMaxKeyLength + 1];
+    char value[kMaxValueLength + 1];
 };
 
-
-
-
-
-int stringLength(const char* str) {
-    int len = 0;
-
-    while (str[len] != '\0') {
-        len++;
+int StringLength(const char* str) {
+    int length = 0;
+    while (str[length] != '\0') {
+        length++;
     }
-
-    return len;
+    return length;
 }
 
-void stringCopy(char* destinationString, const char* srcString) {
+void StringCopy(char* destination, const char* source) {
     int i = 0;
-
-    while (srcString[i] != '\0') {
-        destinationString[i] = srcString[i];
+    while (source[i] != '\0') {
+        destination[i] = source[i];
         i++;
     }
-
-    destinationString[i] = '\0';
+    destination[i] = '\0';
 }
 
-bool stringCompare(const char* string1, const char* string2) {
+bool StringCompare(const char* str1, const char* str2) {
     int i = 0;
-
-    while (string1[i] != '\0' && string2[i] != '\0') {
-        if (string1[i] != string2[i]) {
+    while (str1[i] != '\0' && str2[i] != '\0') {
+        if (str1[i] != str2[i]) {
             return false;
-        } 
+        }
         i++;
-
     }
-
-    return string1[i] == string2[i];
+    return str1[i] == str2[i];
 }
 
-bool isSpace(char c) {
-    return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+bool IsSpace(char c) {
+    return c == ' ' || c == '\t'  || c == '\n';
 }
 
-
-bool checkSymbol(char c) {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c == '_');
+bool IsValidSymbol(char c) {
+    return (c >= 'a' && c <= 'z') || 
+           (c >= 'A' && c <= 'Z') || 
+           (c >= '0' && c <= '9') || 
+           (c == '_');
 }
 
-
-const char* findPointerToSymbol(const char* str, char c) {
+const char* FindChar(const char* str, char c) {
     int i = 0;
-
     while (str[i] != '\0') {
         if (str[i] == c) {
             return str + i;
         }
         i++;
     }
-
     return nullptr;
 }
 
-bool compareStringPrefix(const char* str, const char* prefix) {
+bool CompareStringPrefix(const char* str, const char* prefix) {
     int i = 0;
-
     while (prefix[i] != '\0') {
         if (str[i] != prefix[i]) {
             return false;
         }
         i++;
     }
-
     return true;
 }
 
-
-void deleteSpaces(char* string) {
-    if (string == nullptr) {
+void DeleteSpaces(char* str) {
+    if (str == nullptr) {
         return;
     }
 
-    int len = stringLength(string);
+    int length = StringLength(str);
     int start = 0;
-    int end = len - 1;
+    int end = length - 1;
 
-    while (start < len && isSpace(string[start])) {
+    while (start < length && IsSpace(str[start])) {
         start++;
     }
 
-    while (end >= 0 && isSpace(string[end])) {
+    while (end >= 0 && IsSpace(str[end])) {
         end--;
     }
 
-    if (start > 0 || end < len - 1) {
-        int newLen = end - start + 1;
-
-        if (newLen > 0) {
-            for (int i = 0; i < newLen; i++) {
-                string[i] = string[start + i];
+    if (start > 0 || end < length - 1) {
+        int new_length = end - start + 1;
+        if (new_length > 0) {
+            for (int i = 0; i < new_length; i++) {
+                str[i] = str[start + i];
             }
         }
-
-        string[newLen] = '\0';
+        str[new_length] = '\0';
     }
-
 }
 
-bool checkComandLineArgs(int argc, char* argv[], char*& templatePath, char*& dataPath, char*& outputPath) {
-    templatePath = nullptr;
-    dataPath = nullptr;
-    outputPath = nullptr;
+bool CheckCommandLineArguments(int argc, char* argv[], 
+                               char*& template_path, 
+                               char*& data_path, 
+                               char*& output_path) {
+    template_path = nullptr;
+    data_path = nullptr;
+    output_path = nullptr;
 
     for (int i = 1; i < argc; i++) {
-
-        if (stringCompare(argv[i], "-t")) {
+        if (StringCompare(argv[i], "-t")) {
             if (i + 1 < argc) {
-                templatePath = argv[++i];
-            }
-            else {
+                template_path = argv[++i];
+            } else {
                 return false;
             }
-        }
-
-        else if (stringCompare(argv[i], "-d")) {
+        } else if (StringCompare(argv[i], "-d")) {
             if (i + 1 < argc) {
-                dataPath = argv[++i];
-            }
-            else {
+                data_path = argv[++i];
+            } else {
                 return false;
             }
-        }
-
-        else if (stringCompare(argv[i], "-o")) {
+        } else if (StringCompare(argv[i], "-o")) {
             if (i + 1 < argc) {
-                outputPath = argv[++i];
-            }
-            else {
+                output_path = argv[++i];
+            } else {
                 return false;
             }
-        }
-
-        else if (compareStringPrefix(argv[i], "--template=")) {
-            templatePath = argv[i] + 11;
-        }
-
-        else if (compareStringPrefix(argv[i], "--data=")) {
-            dataPath = argv[i] + 7;
-        }
-
-        else if (compareStringPrefix(argv[i], "--output=")) {
-            outputPath = argv[i] + 9;
-        }
-
-        else {
+        } else if (CompareStringPrefix(argv[i], "--template=")) {
+            template_path = argv[i] + StringLength("--template=");
+        } else if (CompareStringPrefix(argv[i], "--data=")) {
+            data_path = argv[i] + StringLength("--data=");
+        } else if (CompareStringPrefix(argv[i], "--output=")) {
+            output_path = argv[i] + StringLength("--output=");
+        } else {
             return false;
         }
     }
-    return templatePath != nullptr && dataPath != nullptr;
+    return template_path != nullptr && data_path != nullptr;
 }
 
-
-int loadData(const char* dataPath, dataElement* data, int& dataCount) {
-    std::ifstream dataFile(dataPath);
-
-    if (!dataFile.is_open()) {
+int LoadData(const char* data_path, DataElement* data, int& data_count) {
+    std::ifstream data_file(data_path);
+    if (!data_file.is_open()) {
         return 3;
     }
 
-    char line[maxLineLength];
-    dataCount = 0;
-    while (dataFile.getline(line, maxLineLength)) {
+    char line[kMaxLineLength];
+    data_count = 0;
 
+    while (data_file.getline(line, kMaxLineLength)) {
         if (line[0] == '\0') {
             continue;
         }
@@ -199,226 +158,211 @@ int loadData(const char* dataPath, dataElement* data, int& dataCount) {
             continue;
         }
 
-        deleteSpaces(line);
+        DeleteSpaces(line);
 
         if (line[0] == '\0') {
             continue;
         }
 
-        const char* equal = findPointerToSymbol(line, '=');
-        if (equal == nullptr) {
+        const char* equal_sign = FindChar(line, '=');
+        if (equal_sign == nullptr) {
             continue;
         }
 
-        int keyLen = equal - line;
-        if (keyLen > maxKeyLength) {
+        int key_length = equal_sign - line;
+        if (key_length > kMaxKeyLength) {
             continue;
         }
 
-        char key[maxKeyLength + 1];
-        for (int i = 0; i < keyLen; i++) {
+        char key[kMaxKeyLength + 1];
+        for (int i = 0; i < key_length; i++) {
             key[i] = line[i];
         }
+        key[key_length] = '\0';
+        DeleteSpaces(key);
 
-        key[keyLen] = '\0';
-        deleteSpaces(key);
-
-        const char* valueStart = equal + 1;
-        int valueLen = stringLength(valueStart);
-        if (valueLen > maxValueLength) {
+        const char* value_start = equal_sign + 1;
+        int value_length = StringLength(value_start);
+        if (value_length > kMaxValueLength) {
             continue;
         }
 
-        char value[maxValueLength + 1];
-        stringCopy(value, valueStart);
-        deleteSpaces(value);
+        char value[kMaxValueLength + 1];
+        StringCopy(value, value_start);
+        DeleteSpaces(value);
 
-        if (stringLength(key) == 0 || stringLength(value) == 0) {
+        if (StringLength(key) == 0 || StringLength(value) == 0) {
             continue;
         }
 
-        bool validSymbols = true;
-
+        bool valid_symbols = true;
         for (int i = 0; key[i] != '\0'; i++) {
-            if (!checkSymbol(key[i])) {
-                validSymbols = false;
+            if (!IsValidSymbol(key[i])) {
+                valid_symbols = false;
                 break;
             }
         }
         for (int i = 0; value[i] != '\0'; i++) {
-            if (!checkSymbol(value[i])) {
-                validSymbols = false;
+            if (!IsValidSymbol(value[i])) {
+                valid_symbols = false;
                 break;
             }
         }
 
-        if (!validSymbols){
+        if (!valid_symbols) {
             continue;
         }
 
-        bool exist = false;
-        for (int i = 0; i < dataCount; i++) {
-            if (stringCompare(data[i].key, key)) {
-                stringCopy(data[i].value, value);
-                exist = true;
+        bool key_exists = false;
+        for (int i = 0; i < data_count; i++) {
+            if (StringCompare(data[i].key, key)) {
+                StringCopy(data[i].value, value);
+                key_exists = true;
                 break;
             }
         }
 
-        if (!exist) {
-            if (dataCount < maxAmountOfVariables) {
-                stringCopy(data[dataCount].key, key);
-                stringCopy(data[dataCount].value, value);
-                dataCount++;
+        if (!key_exists) {
+            if (data_count < kMaxVariables) {
+                StringCopy(data[data_count].key, key);
+                StringCopy(data[data_count].value, value);
+                data_count++;
             }
         }
     }
 
-    dataFile.close();
+    data_file.close();
     return 0;
 }
 
-
-const char* findDataValue(const dataElement* data, int dataCount, const char* key) {
-    for (int i = 0; i < dataCount; i++) {
-        if (stringCompare(data[i].key, key)) {
+const char* FindValue(const DataElement* data, int data_count, const char* key) {
+    for (int i = 0; i < data_count; i++) {
+        if (StringCompare(data[i].key, key)) {
             return data[i].value;
         }
     }
     return nullptr;
 }
 
-
-int makeTemplate(const char* templatePath, const char* outputPath, const dataElement* data, int dataCount) {
-    std::ifstream templateFile(templatePath);
-    if (!templateFile.is_open()) {
+int MakeTemplate(const char* template_path, 
+                    const char* output_path, 
+                    const DataElement* data, 
+                    int data_count) {
+    std::ifstream template_file(template_path);
+    if (!template_file.is_open()) {
         return 3;
     }
 
-    std::ofstream outputFile;
-    std::ostream* outputStream;
+    std::ofstream output_file;
+    std::ostream* output_stream;
 
-    if (outputPath != nullptr) {
-        outputFile.open(outputPath);
-        if (!outputFile.is_open()) {
-            templateFile.close();
+    if (output_path != nullptr) {
+        output_file.open(output_path);
+        if (!output_file.is_open()) {
+            template_file.close();
             return 3;
         }
-
-        outputStream = &outputFile;
-    }
-    else {
-        outputStream = &std::cout;
+        output_stream = &output_file;
+    } else {
+        output_stream = &std::cout;
     }
 
-    char ch;
+    char current_char;
     int state = 0;
-    char keyBuffer[maxKeyLength + 1];
-    int keyPos = 0;
-    while (templateFile.get(ch)) {
+    char key_buffer[kMaxKeyLength + 1];
+    int key_position = 0;
+
+    while (template_file.get(current_char)) {
         switch (state) {
-        case 0:
-            if (ch == '{') {
-                state = 1;
-            }
-            else {
-                *outputStream << ch;
-            }
-            break;
+            case 0:  
+                if (current_char == '{') {
+                    state = 1;
+                } else {
+                    *output_stream << current_char;
+                }
+                break;
 
-        case 1:
-            if (ch == '{') {
-                state = 2;
-                keyPos = 0;
-            }
-            else {
-                *outputStream << '{' << ch;
-                state = 0;
-            }
-            break;
+            case 1:  
+                if (current_char == '{') {
+                    state = 2;
+                    key_position = 0;
+                } else {
+                    *output_stream << '{' << current_char;
+                    state = 0;
+                }
+                break;
 
-        case 2:
-            if (ch == '}') {
-                state = 1;
-            }
-            else if (keyPos < maxKeyLength) {
-                keyBuffer[keyPos++] = ch;
-            }
-            break;
+            case 2:  
+                if (current_char == '}') {
+                    state = 1;
+                } else if (key_position < kMaxKeyLength) {
+                    key_buffer[key_position++] = current_char;
+                }
+                break;
 
-        case 3:
-            if (ch == '}') {
-                keyBuffer[keyPos] = '\0';
-                deleteSpaces(keyBuffer);
-                const char* value = findDataValue(data, dataCount, keyBuffer);
+            case 3:  
+                if (current_char == '}') {
+                    key_buffer[key_position] = '\0';
+                    DeleteSpaces(key_buffer);
+                    const char* value = FindValue(data, data_count, key_buffer);
 
-                if (value == nullptr) {
-                    templateFile.close();
-                    if (outputPath != nullptr) {
-                        outputFile.close();
+                    if (value == nullptr) {
+                        template_file.close();
+                        if (output_path != nullptr) {
+                            output_file.close();
+                        }
+                        return 1;
                     }
-                    return 1;
-                }
 
-                *outputStream << value;
-                state = 0;
-            }
-            else {
-                if (keyPos < maxKeyLength) {
-                    keyBuffer[keyPos++] = '}';
-                    keyBuffer[keyPos++] = ch;
+                    *output_stream << value;
+                    state = 0;
+                } else {
+                    if (key_position < kMaxKeyLength) {
+                        key_buffer[key_position++] = '}';
+                        key_buffer[key_position++] = current_char;
+                    }
+                    state = 2;
                 }
-                state = 2;
-            }
-            break;
+                break;
         }
-        if ( state == 1 && ch == '}') {
+
+        if (state == 1 && current_char == '}') {
             state = 3;
         }
     }
+
     if (state != 0) {
-        templateFile.close();
-        if (outputPath != nullptr) {
-            outputFile.close();
+        template_file.close();
+        if (output_path != nullptr) {
+            output_file.close();
         }
         return 4;
-
     }
-    templateFile.close();
-    if (outputPath != nullptr) {
-        outputFile.close();
+
+    template_file.close();
+    if (output_path != nullptr) {
+        output_file.close();
     }
     return 0;
-    
 }
 
+int main(int argc, char* argv[]) {
+    char* template_path = nullptr;
+    char* data_path = nullptr;
+    char* output_path = nullptr;
 
-
-
-int main(int argc, char* argv[])
-{  
-    
-    char* templatePath = nullptr;
-    char* dataPath = nullptr;
-    char* outputPath = nullptr;
-
-    if (!checkComandLineArgs(argc, argv, templatePath, dataPath, outputPath)) {
+    if (!CheckCommandLineArguments(argc, argv, template_path, data_path, output_path)) {
         return 2;
     }
-    
 
-    dataElement data[maxAmountOfVariables];
-    int dataCount = 0;
+    DataElement data[kMaxVariables];
+    int data_count = 0;
 
-    int result = loadData(dataPath, data, dataCount);
+    int result = LoadData(data_path, data, data_count);
     if (result != 0) {
         return result;
     }
 
-
-
-    result = makeTemplate(templatePath, outputPath, data, dataCount);
+    result = MakeTemplate(template_path, output_path, data, data_count);
     return result;
-    
-   
 }
